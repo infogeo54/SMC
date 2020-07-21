@@ -5,12 +5,12 @@
 [general]
 name=SMC
 qgisMinimumVersion=3.0
-description=This plugin selects every feature inside the current extent
+description=Selectionne les entites contenues dans des communes choisies par l'utilisateur
 version=0.1
 author=Infogeo54
 email=hvitoux@departement54.fr
 
-about=This plugin allows to select every features from every layers (points, lines and polygons) inside the current extent.
+about=Ce plugin permet de selectionner toutes les entites (points, lignes, polygones) contenues dans des communes choisies par l'utilisateur. La selection s'effectue sur la totalite des couches du projet.
 
 tracker=http://gtihub.com/infogeo54/SMC.git
 repository=http://gtihub.com/infogeo54/SMC.git
