@@ -21,14 +21,16 @@
  *                                                                         *
  ***************************************************************************/
 """
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
+from qgis.PyQt.QtWidgets import QAction, QApplication
+from qgis.core import QgsProject, QgsFeatureRequest, QgsVectorLayer
 
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
 from .smc_dialog import SMCDialog
+from .utils import ui
 import os.path
 
 
@@ -179,15 +181,52 @@ class SMC:
                 action)
             self.iface.removeToolBarIcon(action)
 
+    def fill_table(self, communes):
+        rows, table = ui.create_rows(communes), self.dlg.tw_communes
+        table.setRowCount(len(rows))
+        for index, row in enumerate(rows):
+            table.setItem(index, 0, row["label"])
+            table.setItem(index, 1, row["checkbox"])
+
+    def selected_communes_names(self):
+        res, table = [], self.dlg.tw_communes
+        for row in range(table.rowCount()):
+            is_selected = table.item(row, 1).checkState() == Qt.Checked
+            if is_selected:
+                res.append(table.item(row, 0).text())
+        return res
+
+    def selected_communes(self, communes):
+        selected_communes_names = self.selected_communes_names()
+        return [c for c in list(communes.getFeatures()) if c.attribute("nom") in selected_communes_names]
+
+    def select(self, layers, communes):
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        for l in layers:
+            for c in self.selected_communes(communes):
+                expression = "within($geometry, geom_from_wkt('{wkt}'))".format(wkt=c.geometry().asWkt())
+                l.selectByExpression(expression, QgsVectorLayer.SelectBehavior.AddToSelection)
+        QApplication.restoreOverrideCursor()
+        self.dlg.close()
 
     def run(self):
         """Run method that performs all the real work"""
 
-        # Create the dialog with elements (after translation) and keep reference
-        # Only create GUI ONCE in callback, so that it will only load when the plugin is started
-        if self.first_start == True:
+        project, extent = QgsProject.instance(), self.iface.mapCanvas().extent()
+        layers = [l for l in project.mapLayers().values() if l.type() == 0 and l.name() != "Communes"]
+
+        communes = next((l for l in project.mapLayersByName("Communes")))
+        visible_communes = communes.getFeatures(QgsFeatureRequest(extent))
+
+        if self.first_start:
             self.first_start = False
             self.dlg = SMCDialog()
+
+            # Event listeners
+            self.dlg.btn_cancel.clicked.connect(self.dlg.close)
+            self.dlg.btn_validate.clicked.connect(lambda: self.select(layers, communes))
+
+        self.fill_table(visible_communes)
 
         # show the dialog
         self.dlg.show()
