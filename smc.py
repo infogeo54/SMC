@@ -182,6 +182,10 @@ class SMC:
             self.iface.removeToolBarIcon(action)
 
     def fill_table(self, communes):
+        """
+        Fill the "Communes" table
+        :param communes: List<QgsFeature> - Communes to insert in the table
+        """
         rows, table = ui.create_rows(communes), self.dlg.tw_communes
         table.setRowCount(len(rows))
         for index, row in enumerate(rows):
@@ -189,6 +193,10 @@ class SMC:
             table.setItem(index, 1, row["checkbox"])
 
     def selected_communes_names(self):
+        """
+        Returns selected "Communes" names
+        :return: List<String> - Selected "Communes" names
+        """
         res, table = [], self.dlg.tw_communes
         for row in range(table.rowCount()):
             is_selected = table.item(row, 1).checkState() == Qt.Checked
@@ -197,10 +205,20 @@ class SMC:
         return res
 
     def selected_communes(self, communes):
+        """
+        Returns the Feature instance of every selected "Commune"
+        :param communes: QgsVectorLayer - The "Communes" layer
+        :return: List<QgsFeature> - The Feature instance list for every selected "Commune"
+        """
         selected_communes_names = self.selected_communes_names()
         return [c for c in list(communes.getFeatures()) if c.attribute("nom") in selected_communes_names]
 
     def select(self, layers, communes):
+        """
+        Performs the feature selection
+        :param layers: List<QgsVectorLayer> - Current project's layers
+        :param communes: QgsVectorLayer - The "Communes" layer
+        """
         QApplication.setOverrideCursor(Qt.WaitCursor)
         for l in layers:
             for c in self.selected_communes(communes):
