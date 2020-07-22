@@ -186,7 +186,7 @@ class SMC:
         Fill the "Communes" table
         :param communes: List<QgsFeature> - Communes to insert in the table
         """
-        rows, table = ui.create_rows(communes), self.dlg.tw_communes
+        rows, table = sorted(ui.create_rows(communes), key=lambda k: k["label"]), self.dlg.tw_communes
         table.setRowCount(len(rows))
         for index, row in enumerate(rows):
             table.setItem(index, 0, row["label"])
