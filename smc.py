@@ -213,13 +213,18 @@ class SMC:
         selected_communes_names = self.selected_communes_names()
         return [c for c in list(communes.getFeatures()) if c.attribute("nom") in selected_communes_names]
 
-    def select(self, layers, communes):
+    def select(self, communes):
         """
         Performs the feature selection
-        :param layers: List<QgsVectorLayer> - Current project's layers
         :param communes: QgsVectorLayer - The "Communes" layer
         """
         QApplication.setOverrideCursor(Qt.WaitCursor)
+        layers = [l for l in QgsProject.instance().mapLayers().values() if l.type() == 0 and l.name() != "Communes"]
+        if self.dlg.cb_exclude.checkState() == Qt.Checked:
+            root = QgsProject.instance().layerTreeRoot()
+            basemaps_nodes = root.findGroup("Fonds de plan").findLayers()
+            basemaps_layers = [node.layer() for node in basemaps_nodes]
+            layers = [l for l in QgsProject.instance().mapLayers().values() if l.type() == 0 and l not in basemaps_layers]
         for l in layers:
             for c in self.selected_communes(communes):
                 expression = "within($geometry, geom_from_wkt('{wkt}'))".format(wkt=c.geometry().asWkt())
@@ -230,15 +235,8 @@ class SMC:
     def run(self):
         """Run method that performs all the real work"""
 
-        project, extent = QgsProject.instance(), self.iface.mapCanvas().extent()
-
-        root = QgsProject.instance().layerTreeRoot()
-        basemaps_nodes = root.findGroup("Fonds de plan").findLayers()
-        basemaps_layers = [node.layer() for node in basemaps_nodes]
-
-        layers = [l for l in project.mapLayers().values() if l.type() == 0 and l not in basemaps_layers]
-
-        communes = next((l for l in project.mapLayersByName("Communes")))
+        extent =  self.iface.mapCanvas().extent()
+        communes = next((l for l in QgsProject.instance().mapLayersByName("Communes")))
         visible_communes = communes.getFeatures(QgsFeatureRequest(extent))
 
         if self.first_start:
@@ -247,7 +245,7 @@ class SMC:
 
             # Event listeners
             self.dlg.btn_cancel.clicked.connect(self.dlg.close)
-            self.dlg.btn_validate.clicked.connect(lambda: self.select(layers, communes))
+            self.dlg.btn_validate.clicked.connect(lambda: self.select(communes))
 
         self.fill_table(visible_communes)
 
