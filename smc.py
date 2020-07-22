@@ -231,7 +231,12 @@ class SMC:
         """Run method that performs all the real work"""
 
         project, extent = QgsProject.instance(), self.iface.mapCanvas().extent()
-        layers = [l for l in project.mapLayers().values() if l.type() == 0 and l.name() != "Communes"]
+
+        root = QgsProject.instance().layerTreeRoot()
+        basemaps_nodes = root.findGroup("Fonds de plan").findLayers()
+        basemaps_layers = [node.layer() for node in basemaps_nodes]
+
+        layers = [l for l in project.mapLayers().values() if l.type() == 0 and l not in basemaps_layers]
 
         communes = next((l for l in project.mapLayersByName("Communes")))
         visible_communes = communes.getFeatures(QgsFeatureRequest(extent))
