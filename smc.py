@@ -186,7 +186,7 @@ class SMC:
         Fill the "Communes" table
         :param communes: List<QgsFeature> - Communes to insert in the table
         """
-        rows, table = ui.create_rows(communes), self.dlg.tw_communes
+        rows, table = sorted(ui.create_rows(communes), key=lambda k: k["label"]), self.dlg.tw_communes
         table.setRowCount(len(rows))
         for index, row in enumerate(rows):
             table.setItem(index, 0, row["label"])
@@ -231,7 +231,12 @@ class SMC:
         """Run method that performs all the real work"""
 
         project, extent = QgsProject.instance(), self.iface.mapCanvas().extent()
-        layers = [l for l in project.mapLayers().values() if l.type() == 0 and l.name() != "Communes"]
+
+        root = QgsProject.instance().layerTreeRoot()
+        basemaps_nodes = root.findGroup("Fonds de plan").findLayers()
+        basemaps_layers = [node.layer() for node in basemaps_nodes]
+
+        layers = [l for l in project.mapLayers().values() if l.type() == 0 and l not in basemaps_layers]
 
         communes = next((l for l in project.mapLayersByName("Communes")))
         visible_communes = communes.getFeatures(QgsFeatureRequest(extent))
