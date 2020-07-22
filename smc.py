@@ -223,7 +223,7 @@ class SMC:
         for l in layers:
             for c in self.selected_communes(communes):
                 expression = "within($geometry, geom_from_wkt('{wkt}'))".format(wkt=c.geometry().asWkt())
-                l.selectByExpression(expression, QgsVectorLayer.SelectBehavior.AddToSelection)
+                l.selectByExpression(expression, 1)
         QApplication.restoreOverrideCursor()
         self.dlg.close()
 
